@@ -4,6 +4,18 @@ import numpy as np
 
 from mini_torch.autograd.operation import Operation
 
+def normalize_axis(axis, ndim):
+    """
+    Convert negative axes to positive indices.
+    """
+    if axis is None:
+        return None
+
+    if isinstance(axis, tuple):
+        return tuple(a if a >= 0 else ndim + a for a in axis)
+
+    return axis if axis >= 0 else ndim + axis
+
 
 class Add(Operation):
     """Addition operation."""
@@ -64,20 +76,66 @@ class Sum(Operation):
     """
 
     def backward(self, node, grad_output):
+
         parent, = node.parents
 
-        grad = np.ones_like(parent.data) * grad_output
+        axis = normalize_axis(node.axis, parent.data.ndim)
+        keepdims = node.keepdims
+        original_shape = node.original_shape
+
+        grad = grad_output
+
+        if axis is not None and not keepdims:
+            grad = np.expand_dims(
+                grad,
+                axis=axis,
+            )
+
+        grad = np.broadcast_to(
+            grad,
+            original_shape,
+        )
 
         return (grad,)
     
 class Mean(Operation):
 
     def backward(self, node, grad_output):
+
         parent, = node.parents
 
-        scale = parent.data.size
+        axis = normalize_axis(node.axis, parent.data.ndim)
+        keepdims = node.keepdims
+        original_shape = node.original_shape
 
-        grad = np.ones_like(parent.data) * (grad_output / scale)
+        if axis is None:
+
+            divisor = np.prod(original_shape)
+
+        else:
+
+            if isinstance(axis, tuple):
+
+                divisor = np.prod(
+                    [original_shape[a] for a in axis]
+                )
+
+            else:
+
+                divisor = original_shape[axis]
+
+        grad = grad_output / divisor
+
+        if axis is not None and not keepdims:
+            grad = np.expand_dims(
+                grad,
+                axis=axis,
+            )
+
+        grad = np.broadcast_to(
+            grad,
+            original_shape,
+        )
 
         return (grad,)
 

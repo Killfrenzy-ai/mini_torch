@@ -21,3 +21,5 @@ from .unary import (
 
 from .relu import RELU
 from .sigmoid import SIGMOID
+from .clip import CLIP
+from .max import MAX

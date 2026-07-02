@@ -3,9 +3,9 @@ import numpy as np
 from mini_torch.tensors import tensor
 
 from mini_torch.nn.linear import Linear
-from mini_torch.nn.activations import ReLU
+from mini_torch.nn.activations import ReLU, Sigmoid
 from mini_torch.nn.sequential import Sequential
-from mini_torch.nn.losses import MSELoss
+from mini_torch.nn.losses import MSELoss, BCELoss
 
 from mini_torch.optim.sgd import SGD
 from mini_torch.autograd.engine import backward
@@ -43,23 +43,24 @@ y = tensor(
 # ---------------------------------------------------------
 
 model = Sequential(
-    Linear(2, 4),
-    ReLU(),
-    Linear(4, 1),
+    Linear(2, 8),
+    Sigmoid(),
+    Linear(8, 1),
+    Sigmoid()
 )
 
-criterion = MSELoss()
+criterion = BCELoss()
 
 optimizer = SGD(
     model.parameters(),
-    lr=0.1,
+    lr=0.5,
 )
 
 # ---------------------------------------------------------
 # Training
 # ---------------------------------------------------------
 
-epochs = 5000
+epochs = 10000
 
 for epoch in range(epochs):
 
@@ -69,7 +70,7 @@ for epoch in range(epochs):
 
     optimizer.zero_grad()
 
-    backward(loss)
+    loss.backward()
 
     optimizer.step()
 
