@@ -25,3 +25,7 @@ class Log(Operation):
         grad = grad_output / parent.data
 
         return (grad,)
+    
+NEG = Neg()
+EXP = Exp()
+LOG = Log()

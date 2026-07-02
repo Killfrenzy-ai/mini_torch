@@ -1,5 +1,21 @@
-/venv
-env
-__pycache__
-**/*.env
-logs
+# Virtual environments
+venv/
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Pytest
+.pytest_cache/
+
+# VSCode
+.vscode/
+
+# JetBrains
+.idea/
+
+# Build
+dist/
+build/
+*.egg-info/

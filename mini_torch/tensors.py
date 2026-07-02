@@ -1,25 +1,25 @@
 from numpy import typing
 import numpy as np
 import operator
-from mini_torch.autograd.operations.add import Add, Sub, Mul, Div, Sum, MatMul, Mean, Transpose, Reshape, Squeeze, Unsqueeze, Pow
-from mini_torch.autograd.operations.unary import Neg, Exp, Log
-from mini_torch.autograd.operations.relu import ReLU
-ADD = Add()  # Instance of the Add operation for use in tensor addition
-SUB = Sub()  # Instance of the Sub operation for use in tensor subtraction
-MUL = Mul()  # Instance of the Mul operation for use in tensor multiplication
-DIV = Div()  # Instance of the Div operation for use in tensor division
-SUM = Sum()  # Instance of the Sum operation for use in tensor summation
-MATMUL = MatMul()  # Instance of the MatMul operation for use in tensor matrix multiplication
-MEAN = Mean()  # Instance of the Mean operation for use in tensor mean calculation
-TRANSPOSE = Transpose()  # Instance of the Transpose operation for use in tensor transpose
-RESHAPE = Reshape()  # Instance of the Reshape operation for use in tensor reshape
-SQUEEZE = Squeeze()  # Instance of the Squeeze operation for use in tensor squeeze
-UNSQUEEZE = Unsqueeze()  # Instance of the Unsqueeze operation for use in tensor unsqueeze
-POW = Pow()  # Instance of the Pow operation for use in tensor power
-NEG = Neg()  # Instance of the Neg operation for use in tensor negation
-EXP = Exp()  # Instance of the Exp operation for use in tensor exponential
-LOG = Log()  # Instance of the Log operation for use in tensor natural logarithm
-RELU = ReLU()  # Instance of the ReLU operation for use in tensor ReLU activation
+from mini_torch.autograd.operations import (
+    ADD,
+    SUB,
+    MUL,
+    DIV,
+    SUM,
+    MEAN,
+    MATMUL,
+    TRANSPOSE,
+    RESHAPE,
+    SQUEEZE,
+    UNSQUEEZE,
+    POW,
+    NEG,
+    EXP,
+    LOG,
+    RELU,
+    SIGMOID,
+)
 class tensor:
     """ Multi-dimensional array used throughout the framework. """
 
@@ -87,6 +87,16 @@ class tensor:
             return result
         except ValueError as e:
             raise ValueError(f"TensorShapeError: Cannot perform operation on tensors with shapes {self.shape} and {other.shape}.") from e
+        
+    def _unary_op(self, operation, op_instance):
+        result = operation(self.data)
+
+        return tensor(
+            result,
+            parents=(self,),
+            op=op_instance,
+            requires_grad=self.requires_grad,
+        )
     
     def __add__(self, other):
         """ Adds two tensors element-wise. """
@@ -277,3 +287,9 @@ class tensor:
         result = np.maximum(self.data, 0)
 
         return tensor(result,parents=(self,),op=RELU,requires_grad=self.requires_grad,)
+
+    def sigmoid(self):
+        return self._unary_op(
+            lambda x: 1 / (1 + np.exp(-x)),
+            SIGMOID,
+        )

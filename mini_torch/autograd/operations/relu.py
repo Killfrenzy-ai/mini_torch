@@ -9,3 +9,5 @@ class ReLU(Operation):
         grad = grad_output * (parent.data > 0)
 
         return (grad,)
+    
+RELU = ReLU()

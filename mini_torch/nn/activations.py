@@ -4,3 +4,8 @@ class ReLU(Module):
 
     def forward(self, x):
         return x.relu()
+
+class Sigmoid(Module):
+
+    def forward(self, x):
+        return x.sigmoid()

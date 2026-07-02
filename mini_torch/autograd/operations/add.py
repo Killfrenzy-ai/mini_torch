@@ -137,3 +137,16 @@ class Pow(Operation):
         )
 
         return (grad,)
+    
+ADD = Add()
+SUB = Sub()
+MUL = Mul()
+DIV = Div()
+SUM = Sum()
+MEAN = Mean()
+MATMUL = MatMul()
+TRANSPOSE = Transpose()
+RESHAPE = Reshape()
+SQUEEZE = Squeeze()
+UNSQUEEZE = Unsqueeze()
+POW = Pow()
