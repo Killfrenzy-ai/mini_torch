@@ -1,6 +1,5 @@
 from numpy import typing
 import numpy as np
-import operator
 from mini_torch.autograd.operations import (
     ADD,
     SUB,
@@ -79,15 +78,36 @@ class tensor:
         if isinstance(other, tensor):
             return other
         return tensor(other)
+    
+    def _create_tensor(self, data, *, parents, op):
+        return tensor(
+            data,
+            parents=parents,
+            op=op,
+            requires_grad=any(parent.requires_grad for parent in parents),
+        )
           
-    def _binary_op(self, other, operation):
-        """ Performs a binary operation on two tensors. """
+    def _binary_op(self, other, numpy_op, graph_op):
+        """
+        Execute a binary operation and construct the computation graph.
+        """
+
+        other = self._ensure_tensor(other)
+
         try:
-            result = operation(self.data, other.data)
-            return result
+            result = numpy_op(self.data, other.data)
+
         except ValueError as e:
-            raise ValueError(f"TensorShapeError: Cannot perform operation on tensors with shapes {self.shape} and {other.shape}.") from e
-        
+            raise ValueError(
+                f"TensorShapeError: Cannot perform operation on tensors with "
+                f"shapes {self.shape} and {other.shape}."
+            ) from e
+
+        return self._create_tensor(
+            result,
+            parents=(self, other),
+            op=graph_op,
+        )        
     def _unary_op(self, operation, op_instance):
         result = operation(self.data)
 
@@ -99,99 +119,60 @@ class tensor:
         )
     
     def __add__(self, other):
-        """ Adds two tensors element-wise. """
-        other = self._ensure_tensor(other)
-        parents = (self, other)
-        requires_grad = self.requires_grad or other.requires_grad
-        op = operator.add
-        result = self._binary_op(other, op)
-        return tensor(result, parents=parents, op=ADD, requires_grad=requires_grad)
-
+        return self._binary_op(
+            other,
+            np.add,
+            ADD,
+        )
+    
     def __sub__(self, other):
-        """ Subtracts two tensors element-wise. """
-        other = self._ensure_tensor(other)
-        parents = (self, other)
-        requires_grad = self.requires_grad or other.requires_grad
-        op = operator.sub
-        result = self._binary_op(other, op)
-        return tensor(result, parents=parents, op=SUB, requires_grad=requires_grad)
-
+        return self._binary_op(
+            other,
+            np.subtract,
+            SUB,
+        )
     def __mul__(self, other):
-        """ Multiplies two tensors element-wise. """
-        other = self._ensure_tensor(other)
-        parents = (self, other)
-        requires_grad = self.requires_grad or other.requires_grad
-        op = operator.mul
-        result = self._binary_op(other, op)
-        return tensor(result, parents=parents, op=MUL, requires_grad=requires_grad)
-
+        return self._binary_op(
+            other,
+            np.multiply,
+            MUL,
+        )
     def __truediv__(self, other):
-        """ Divides two tensors element-wise. """
-        other = self._ensure_tensor(other)
-        parents = (self, other)
-        requires_grad = self.requires_grad or other.requires_grad
-        op = operator.truediv
-        result = self._binary_op(other, op)
-        return tensor(result, parents=parents, op=DIV, requires_grad=requires_grad)
-
+        return self._binary_op(
+            other,
+            np.divide,
+            DIV,
+        )
     def __matmul__(self, other):
-        """ Performs matrix multiplication between two tensors. """
-        other = self._ensure_tensor(other)
-        parents = (self, other)
-        requires_grad = self.requires_grad or other.requires_grad
-        op = operator.matmul
-        result = self._binary_op(other, op)
-        return tensor(result, parents=parents, op=MATMUL, requires_grad=requires_grad)
-
+        return self._binary_op(
+            other,
+            np.matmul,
+            MATMUL,
+        )
     def __getitem__(self, index):
         """ Returns the element at the specified index. """
         return tensor(self.data[index])
         
     def __radd__(self, other):
-        """ Adds two tensors element-wise (right-hand side). """
         other = self._ensure_tensor(other)
-        parents = (other, self)
-        requires_grad = self.requires_grad or other.requires_grad
-        op = operator.add
-        result = other._binary_op(self, op)
-        return tensor(result, parents=parents, op=op, requires_grad=requires_grad)
-
+        return other.__add__(self)
+    
     def __rsub__(self, other):
-        """ Subtracts two tensors element-wise (right-hand side). """
         other = self._ensure_tensor(other)
-        parents = (other, self)
-        requires_grad = self.requires_grad or other.requires_grad
-        op = operator.sub
-        result = other._binary_op(self, op)
-        return tensor(result, parents=parents, op=op, requires_grad=requires_grad)
-
+        return other.__sub__(self)
+    
     def __rmul__(self, other):
-        """ Multiplies two tensors element-wise (right-hand side). """
         other = self._ensure_tensor(other)
-        parents = (other, self)
-        requires_grad = self.requires_grad or other.requires_grad
-        op = operator.mul
-        result = other._binary_op(self, op)
-        return tensor(result, parents=parents, op=op, requires_grad=requires_grad)
+        return other.__mul__(self)
 
     def __rtruediv__(self, other):
-        """ Divides two tensors element-wise (right-hand side). """
         other = self._ensure_tensor(other)
-        parents = (other, self)
-        requires_grad = self.requires_grad or other.requires_grad
-        op = operator.truediv
-        result = other._binary_op(self, op)
-        return tensor(result, parents=parents, op=op, requires_grad=requires_grad)
-
+        return other.__truediv__(self)
+    
     def __rmatmul__(self, other):
-        """ Performs matrix multiplication between two tensors (right-hand side). """
         other = self._ensure_tensor(other)
-        parents = (other, self)
-        requires_grad = self.requires_grad or other.requires_grad
-        op = operator.matmul
-        result = other._binary_op(self, op)
-        return tensor(result, parents=parents, op=MATMUL, requires_grad=requires_grad)
-
+        return other.__matmul__(self)
+    
     def transpose(self, *axes):
         """
         Return a transposed view of the tensor.
