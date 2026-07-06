@@ -15,6 +15,7 @@ from mini_torch.nn.activations import ReLU, Softmax
 from mini_torch.nn.sequential import Sequential
 from mini_torch.nn.losses import CrossEntropyLoss
 
+from mini_torch.optim.adam import Adam
 from mini_torch.optim.sgd import SGD
 
 
@@ -101,7 +102,7 @@ criterion = CrossEntropyLoss()
 
 optimizer = SGD(
     model.parameters(),
-    lr=0.05,
+    lr=0.005,
 )
 
 

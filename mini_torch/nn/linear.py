@@ -1,6 +1,7 @@
 from mini_torch.nn.module import Module
 from mini_torch.parameter import Parameter
 from mini_torch.tensors import tensor
+from mini_torch.nn.init import get_initializer
 import numpy as np
 
 class Linear(Module):
@@ -11,14 +12,15 @@ class Linear(Module):
         output = input@weight + bias
     """
 
-    def __init__(self, in_features , out_features, bias=True):
+    def __init__(self, in_features , out_features, bias=True, initialization="kaiming_uniform"):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
 
         # Initialize weights and bias
-        # Xavier initialization for weights
-        self.weight = Parameter(np.random.randn(in_features, out_features ) / np.sqrt(in_features))
+        # Kaiming initialization for weights
+        initializer = get_initializer(initialization)
+        self.weight = Parameter(initializer((in_features, out_features)))
 
         if bias:
             self.bias = Parameter(np.zeros(out_features))
