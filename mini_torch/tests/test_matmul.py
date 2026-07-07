@@ -54,3 +54,24 @@ def test_matmul_gradcheck():
         return (a @ b).sum()
 
     assert gradcheck(fn, [A, B])
+
+def test_batched_matmul_backward():
+
+    a = tensor(
+        np.random.randn(2, 3, 4),
+        requires_grad=True,
+    )
+
+    b = tensor(
+        np.random.randn(2, 4, 5),
+        requires_grad=True,
+    )
+
+    out = a @ b
+
+    loss = out.sum()
+
+    backward(loss)
+
+    assert a.grad.shape == a.shape
+    assert b.grad.shape == b.shape

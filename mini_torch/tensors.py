@@ -334,9 +334,15 @@ class tensor:
             axes = tuple(reversed(range(self.ndim)))
         elif len(axes) == 1:
             axes = axes[0]
+        
+        elif len(axes) == 2:
+            perm = list(range(self.ndim))
+            i,j = axes
+            perm[i], perm[j] = perm[j], perm[i]
+            axes = tuple(perm)
 
         return self._shape_op(
-            np.transpose(self.data, axes),
+            np.transpose(self.data, axes,),
             TRANSPOSE,
             axes=axes,
         )

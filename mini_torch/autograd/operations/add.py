@@ -65,8 +65,11 @@ class MatMul(Operation):
     def backward(self, node, grad_output):
         left, right = node.parents
 
-        grad_left = grad_output @ right.data.T
-        grad_right = left.data.T @ grad_output
+        grad_left = grad_output @ np.swapaxes(right.data, -1, -2)
+        grad_right = np.swapaxes(left.data, -1, -2) @ grad_output
+
+        grad_left = unbroadcast(grad_left, left.shape)
+        grad_right = unbroadcast(grad_right, right.shape)
 
         return grad_left, grad_right
     
