@@ -97,7 +97,7 @@ class Sum(Operation):
         grad = np.broadcast_to(
             grad,
             original_shape,
-        )
+        ).copy()
 
         return (grad,)
     
@@ -138,7 +138,7 @@ class Mean(Operation):
         grad = np.broadcast_to(
             grad,
             original_shape,
-        )
+        ).copy()
 
         return (grad,)
 

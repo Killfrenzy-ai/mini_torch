@@ -2,6 +2,7 @@ from mini_torch.nn.module import Module
 from mini_torch.nn.activations import Softmax
 
 import math
+import numpy as np
 
 
 class ScaledDotProductAttention(Module):
@@ -22,6 +23,10 @@ class ScaledDotProductAttention(Module):
         d_k = query.shape[-1]
         scale = math.sqrt(d_k)
         scores = query @ key.transpose(-2, -1) / scale
+
+        if mask is not None:
+            scores.data = np.where(mask, -1e9, scores.data)
+
         weights = self.softmax(scores)
         output = weights @ value
 

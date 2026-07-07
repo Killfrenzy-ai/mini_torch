@@ -4,32 +4,28 @@
 
 A lightweight deep learning framework built completely from scratch using **NumPy**.
 
-Designed to understand how modern deep learning frameworks and Large Language Models work internally.
+Designed to understand how modern deep learning frameworks and GPT-style language models work internally.
 
 ![Python](https://img.shields.io/badge/Python-3.12+-blue.svg)
 ![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)
-![Version](https://img.shields.io/badge/version-v0.6.0-orange.svg)
-![Tests](https://img.shields.io/badge/tests-220%2B%20passing-success.svg)
+![Version](https://img.shields.io/badge/version-v1.0.0-orange.svg)
+![Tests](https://img.shields.io/badge/tests-330%2B%20passing-success.svg)
 
 </div>
 
 ---
 
-# Why mini_torch?
+# Overview
 
-Most developers learn deep learning by importing PyTorch or TensorFlow.
+**mini_torch** is an educational deep learning framework implemented entirely from scratch using **NumPy**.
 
-Very few understand what happens underneath.
+The project began as an implementation of automatic differentiation and gradually evolved into a complete neural network framework capable of building and training modern Transformer-based language models.
 
-**mini_torch** is my attempt to build a modern deep learning framework completely from scratch using only **NumPy**, implementing every major component myself—from automatic differentiation to neural network layers and, eventually, a GPT-style Small Language Model.
-
-The goal is not to compete with PyTorch.
-
-The goal is to understand it.
+Unlike production frameworks, every major component is implemented manually to provide a clear understanding of how deep learning systems work internally.
 
 ---
 
-# Current Features
+# Features
 
 ## Automatic Differentiation
 
@@ -61,13 +57,28 @@ The goal is to understand it.
 
 ---
 
-## Neural Network Layers
+## Neural Network Modules
 
-- Linear
+- Module
 - Sequential
+- ModuleList
+- Parameter
+- Linear
 - Embedding
+- Learned Positional Embedding
 - LayerNorm
 - Dropout
+- FeedForward
+
+---
+
+## Transformer Components
+
+- Scaled Dot Product Attention
+- Multi-Head Attention
+- GPT-style Transformer Block
+- Causal Masking
+- GPT Decoder Architecture
 
 ---
 
@@ -83,13 +94,13 @@ The goal is to understand it.
 
 - Mean Squared Error (MSE)
 - Binary Cross Entropy (BCE)
-- Cross Entropy
+- Cross Entropy Loss
 
 ---
 
 ## Optimizers
 
-- Stochastic Gradient Descent (SGD)
+- SGD
 - Adam
 
 ---
@@ -103,7 +114,7 @@ The goal is to understand it.
 
 ---
 
-## Data Pipeline
+## Data Utilities
 
 - Dataset
 - TensorDataset
@@ -113,14 +124,15 @@ The goal is to understand it.
 
 ## Model Utilities
 
-- Parameter registration
 - Recursive module hierarchy
-- `train()`
-- `eval()`
-- Serialization
+- Parameter registration
+- Model serialization
 - `state_dict()`
+- `load_state_dict()`
 - `save()`
 - `load()`
+- `train()`
+- `eval()`
 
 ---
 
@@ -130,25 +142,27 @@ The goal is to understand it.
 mini_torch/
 │
 ├── autograd/
-│   ├── engine.py
-│   ├── operation.py
-│   └── operations/
 │
 ├── data/
-│   ├── dataset.py
-│   ├── tensor_dataset.py
-│   └── dataloader.py
 │
 ├── nn/
 │   ├── activations.py
+│   ├── attention.py
 │   ├── dropout.py
 │   ├── embedding.py
+│   ├── feedforward.py
+│   ├── functional.py
+│   ├── gpt.py
 │   ├── init.py
 │   ├── layernorm.py
 │   ├── linear.py
 │   ├── losses.py
 │   ├── module.py
-│   └── sequential.py
+│   ├── module_list.py
+│   ├── multihead_attention.py
+│   ├── position.py
+│   ├── sequential.py
+│   └── transformer_block.py
 │
 ├── optim/
 │
@@ -161,14 +175,14 @@ mini_torch/
 
 # Examples
 
-The framework currently includes complete working examples.
+Current examples included with the framework:
 
 | Example | Description |
 |----------|-------------|
-| Linear Regression | First regression model |
-| XOR (MSE) | XOR classification using MSE |
-| XOR (BCE) | XOR classification using Binary Cross Entropy |
-| Iris Classification | Multi-class classification with Softmax + CrossEntropy |
+| Linear Regression | Simple regression |
+| XOR (MSE) | Binary classification |
+| XOR (BCE) | Binary classification using BCE |
+| Iris Classification | Multi-class classification |
 
 Example:
 
@@ -196,24 +210,25 @@ prediction = model(x)
 
 # Testing
 
-The project is heavily tested.
-
-Current test coverage includes:
+The project currently contains **330+ automated unit tests** covering:
 
 - Tensor operations
-- Autograd engine
+- Automatic differentiation
+- Broadcasting
+- Matrix multiplication
 - Activations
 - Loss functions
 - Optimizers
-- Layers
+- Weight initialization
+- Neural network layers
 - Serialization
-- Data loading
+- Dataset utilities
+- Attention
+- Multi-head attention
+- Transformer blocks
+- GPT architecture
 
-```
-220+ Passing Tests
-```
-
-Run the test suite:
+Run the complete suite:
 
 ```bash
 pytest
@@ -221,59 +236,53 @@ pytest
 
 ---
 
-# Development Roadmap
+# Roadmap
 
-## Framework Core
+## Framework
 
-- [x] Tensor implementation
-- [x] Automatic differentiation
-- [x] Broadcasting support
-- [x] Neural network modules
+- [x] Tensor
+- [x] Automatic Differentiation
+- [x] Neural Network Modules
 - [x] Optimizers
-- [x] Weight initialization
-- [x] Data pipeline
 - [x] Serialization
-
----
-
-## Transformer Components
-
-- [x] Embedding
-- [x] LayerNorm
-- [x] Dropout
-- [ ] Positional Embeddings
-- [ ] Scaled Dot Product Attention
-- [ ] Multi-Head Attention
-- [ ] Feed Forward Network
-- [ ] Transformer Block
+- [x] Data Pipeline
+- [x] Transformer Components
+- [x] GPT Architecture
 
 ---
 
 ## Language Model
 
-- [ ] GPT Decoder
-- [ ] Tokenizer
+- [ ] Character Tokenizer
 - [ ] Vocabulary
 - [ ] Text Dataset
-- [ ] TinyGPT Training
+- [ ] GPT Training Pipeline
+- [ ] Tiny Shakespeare Training
 - [ ] Text Generation
 
 ---
 
-# Learning Goals
+## Future Improvements
 
-This project explores the implementation of:
+- [ ] GELU activation
+- [ ] Weight tying
+- [ ] Learning rate schedulers
+- [ ] Gradient clipping
+- [ ] Byte Pair Encoding (BPE)
+- [ ] Top-k sampling
+- [ ] Top-p sampling
+- [ ] Rotary Positional Embeddings (RoPE)
+- [ ] KV Cache for inference
 
-- Automatic Differentiation
-- Computational Graphs
-- Backpropagation
-- Neural Network Training
-- Optimization Algorithms
-- Weight Initialization
-- Transformer Architecture
-- Language Model Training
+---
 
-Everything is implemented from first principles without relying on existing deep learning frameworks.
+# Design Goals
+
+The objective of this project is educational.
+
+Every major component—including the autograd engine, optimizers, neural network layers, attention mechanism and GPT architecture—is implemented manually without relying on existing deep learning frameworks.
+
+The focus is on understanding the internal mechanics of modern deep learning systems rather than maximizing performance.
 
 ---
 
@@ -284,38 +293,14 @@ This project draws inspiration from:
 - PyTorch
 - micrograd
 - tinygrad
+- nanoGPT
 - The Transformer paper ("Attention Is All You Need")
-- GPT architecture
+- GPT-2 architecture
 
-while implementing every component independently as an educational exercise.
-
----
-
-# Future Vision
-
-The long-term objective is to evolve **mini_torch** into a framework capable of training a small decoder-only Transformer language model completely from scratch.
-
-Planned milestones include:
-
-- Learned positional embeddings
-- Multi-head self-attention
-- Transformer decoder blocks
-- Byte Pair Encoding (BPE) tokenizer
-- TinyGPT training on a custom corpus
-- Text generation
-
----
-
-# Contributing
-
-Suggestions, bug reports and discussions are welcome.
-
-Feel free to open an issue or submit a pull request.
+All implementations are written independently as educational exercises.
 
 ---
 
 # License
 
-This project is licensed under the **Apache License 2.0**.
-
-See the `LICENSE` file for details.
+Licensed under the Apache License 2.0.

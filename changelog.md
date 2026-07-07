@@ -6,6 +6,41 @@ This project follows Semantic Versioning.
 
 ---
 
+# v1.0.0
+
+## Added
+
+### Transformer Architecture
+- Learned Positional Embedding
+- Scaled Dot Product Attention
+- Multi-Head Attention
+- Position-wise Feed Forward Network
+- GPT-style Pre-LayerNorm Transformer Block
+- GPT Decoder Model
+- Causal Attention Masking
+
+### Neural Network
+- ModuleList container
+- FeedForward layer
+
+### Tensor Operations
+- Reshape operation with autograd
+- Transpose operation with autograd
+
+### Framework
+- Transformer functional utilities
+- Recursive module containers
+
+## Improved
+
+- Full Transformer support
+- Batched matrix multiplication gradients
+- Improved autograd graph for complex residual networks
+- Improved serialization support for nested modules
+- Expanded unit test coverage to 330+ tests
+
+---
+
 # v0.6.0
 
 ## Added
