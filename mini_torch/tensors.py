@@ -21,6 +21,7 @@ from mini_torch.autograd.operations import (
     SIGMOID,
     CLIP,
     MAX,
+    INDEX,
 )
 
 # ==========================================================
@@ -445,7 +446,7 @@ class tensor:
         Return the tensor element(s) at the specified index.
         """
 
-        return tensor(self.data[index], requires_grad=self.requires_grad)
+        return self._attach_metadata(self._create_tensor(self.data[index], parents=(self,), op=INDEX), index=index)
     
     def backward(self):
 

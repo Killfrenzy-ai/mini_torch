@@ -23,3 +23,8 @@ from .relu import RELU
 from .sigmoid import SIGMOID
 from .clip import CLIP
 from .max import MAX
+from .index import Index
+INDEX = Index()
+from .dropout import Dropout
+
+DROPOUT = Dropout()
