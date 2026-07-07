@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from mini_torch.nn.linear import Linear
-from mini_torch.nn.init import (INITIALIZERS,
+from mini_torch.nn.init import (
     xavier_uniform,
     xavier_normal,
     kaiming_uniform,
