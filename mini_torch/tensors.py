@@ -452,6 +452,24 @@ class tensor:
         Return the tensor element(s) at the specified index.
         """
 
+        if isinstance(index, tensor):
+            index = index.data.astype(np.int64, copy= False)
+
+        elif isinstance(index, tuple):
+
+            normalized = []
+
+            for item in index:
+
+                if isinstance(item, tensor):
+                    normalized.append(
+                        item.data.astype(np.int64)
+                    )
+                else:
+                    normalized.append(item)
+
+            index = tuple(normalized)
+
         return self._attach_metadata(self._create_tensor(self.data[index], parents=(self,), op=INDEX), index=index)
     
     def backward(self):

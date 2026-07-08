@@ -56,12 +56,11 @@ class CrossEntropyLoss(Module):
     Multi-class Cross Entropy Loss.
 
     Expects:
-        - prediction: probabilities after Softmax
-        - target: one-hot encoded labels
+        prediction : probabilities after Softmax
+                     Shape (N, C)
 
-    Example:
-        prediction = [[0.1, 0.8, 0.1]]
-        target     = [[0.0, 1.0, 0.0]]
+        target : integer class labels
+                 Shape (N,)
     """
 
     def __init__(self, eps=1e-7):
@@ -75,6 +74,13 @@ class CrossEntropyLoss(Module):
             1.0 - self.eps,
         )
 
-        loss = -(target * prediction.log())
+        batch_size = prediction.shape[0]
 
-        return loss.sum(axis=1).mean()
+        probabilities = prediction[
+            range(batch_size),
+            target,
+        ]
+
+        loss = -probabilities.log()
+
+        return loss.mean()
