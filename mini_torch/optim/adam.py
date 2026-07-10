@@ -1,5 +1,4 @@
-import numpy as np
-
+from mini_torch.backend import xp
 from mini_torch.optim.optimizer import Optimizer
 
 class Adam(Optimizer):
@@ -24,8 +23,8 @@ class Adam(Optimizer):
         """
         for param in self.parameters:
             self.state[id(param)] = {
-                "m": np.zeros_like(param.data),
-                "v": np.zeros_like(param.data),
+                "m": xp().zeros_like(param.data),
+                "v": xp().zeros_like(param.data),
             }
 
     def step(self):
@@ -72,5 +71,5 @@ class Adam(Optimizer):
             parameter.data -= (
                 self.lr
                 * m_hat
-                / (np.sqrt(v_hat) + self.eps)
+                / (xp().sqrt(v_hat) + self.eps)
             )

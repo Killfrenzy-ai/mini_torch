@@ -6,6 +6,7 @@ from mini_torch.nn.linear import Linear
 from mini_torch.nn.activations import ReLU, Sigmoid
 from mini_torch.nn.sequential import Sequential
 from mini_torch.nn.losses import MSELoss, BCELoss
+from mini_torch.backend import xp
 
 from mini_torch.optim.sgd import SGD
 from mini_torch.autograd.engine import backward
@@ -14,14 +15,14 @@ from mini_torch.autograd.engine import backward
 # Reproducibility
 # ---------------------------------------------------------
 
-np.random.seed(42)
+xp().random.seed(42)
 
 # ---------------------------------------------------------
 # XOR Dataset
 # ---------------------------------------------------------
 
 x = tensor(
-    np.array([
+    xp().array([
         [0., 0.],
         [0., 1.],
         [1., 0.],
@@ -30,7 +31,7 @@ x = tensor(
 )
 
 y = tensor(
-    np.array([
+    xp().array([
         [0.],
         [1.],
         [1.],
@@ -91,7 +92,7 @@ print(pred.data)
 
 print("\nRounded Predictions")
 
-print(np.round(pred.data))
+print(xp().round(pred.data))
 
 print("\nTargets")
 

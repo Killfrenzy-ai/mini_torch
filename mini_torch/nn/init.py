@@ -1,5 +1,5 @@
 import numpy as np
-
+from mini_torch.backend import xp
 
 def calculate_fan_in_out(shape):
     """
@@ -39,11 +39,11 @@ def xavier_uniform(shape):
 
     fan_in, fan_out = calculate_fan_in_out(shape)
 
-    limit = np.sqrt(
+    limit = xp().sqrt(
         6.0 / (fan_in + fan_out)
     )
 
-    return np.random.uniform(
+    return xp().random.uniform(
         -limit,
         limit,
         size=shape,
@@ -64,11 +64,11 @@ def xavier_normal(shape):
 
     fan_in, fan_out = calculate_fan_in_out(shape)
 
-    std = np.sqrt(
+    std = xp().sqrt(
         2.0 / (fan_in + fan_out)
     )
 
-    return np.random.normal(
+    return xp().random.normal(
         loc=0.0,
         scale=std,
         size=shape,
@@ -89,11 +89,11 @@ def kaiming_uniform(shape):
 
     fan_in, _ = calculate_fan_in_out(shape)
 
-    limit = np.sqrt(
+    limit = xp().sqrt(
         6.0 / fan_in
     )
 
-    return np.random.uniform(
+    return xp().random.uniform(
         -limit,
         limit,
         size=shape,
@@ -114,11 +114,11 @@ def kaiming_normal(shape):
 
     fan_in, _ = calculate_fan_in_out(shape)
 
-    std = np.sqrt(
+    std = xp().sqrt(
         2.0 / fan_in
     )
 
-    return np.random.normal(
+    return xp().random.normal(
         loc=0.0,
         scale=std,
         size=shape,

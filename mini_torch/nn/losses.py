@@ -1,4 +1,5 @@
 from mini_torch.nn.module import Module
+from mini_torch.backend import xp
 
 class MSELoss(Module):
     """
@@ -56,7 +57,7 @@ class CrossEntropyLoss(Module):
     Multi-class Cross Entropy Loss.
 
     Expects:
-        prediction : probabilities after Softmax
+        prediction : probabilities
                      Shape (N, C)
 
         target : integer class labels
@@ -75,9 +76,10 @@ class CrossEntropyLoss(Module):
         )
 
         batch_size = prediction.shape[0]
+        rows = xp().arange(batch_size)
 
         probabilities = prediction[
-            range(batch_size),
+            rows,
             target,
         ]
 

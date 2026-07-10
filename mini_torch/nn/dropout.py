@@ -1,7 +1,7 @@
 import numpy as np
 
 from mini_torch.nn.module import Module
-
+from mini_torch.backend import xp
 from mini_torch.autograd.operations import DROPOUT
 
 
@@ -37,7 +37,7 @@ class Dropout(Module):
         keep_probability = 1.0 - self.p
 
         mask = (
-            np.random.rand(*x.shape)
+            xp().random.rand(*x.shape)
             < keep_probability
         ).astype(x.dtype)
 

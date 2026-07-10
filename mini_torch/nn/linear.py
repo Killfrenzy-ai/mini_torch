@@ -2,7 +2,7 @@ from mini_torch.nn.module import Module
 from mini_torch.parameter import Parameter
 from mini_torch.tensors import tensor
 from mini_torch.nn.init import get_initializer
-import numpy as np
+from mini_torch.backend import xp
 
 class Linear(Module):
     """
@@ -23,7 +23,7 @@ class Linear(Module):
         self.weight = Parameter(initializer((in_features, out_features)))
 
         if bias:
-            self.bias = Parameter(np.zeros(out_features))
+            self.bias = Parameter(xp().zeros(out_features))
         else:
             self.bias = None
 

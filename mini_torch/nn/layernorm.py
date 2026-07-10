@@ -1,7 +1,6 @@
 from mini_torch.nn.module import Module
 from mini_torch.parameter import Parameter
-
-import numpy as np
+from mini_torch.backend import xp
 
 
 class LayerNorm(Module):
@@ -20,11 +19,11 @@ class LayerNorm(Module):
         self.eps = eps
 
         self.gamma = Parameter(
-            np.ones(normalized_shape)
+            xp().ones(normalized_shape)
         )
 
         self.beta = Parameter(
-            np.zeros(normalized_shape)
+            xp().zeros(normalized_shape)
         )
 
     def forward(self, x):

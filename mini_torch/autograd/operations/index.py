@@ -1,4 +1,4 @@
-import numpy as np
+from mini_torch.backend import xp
 
 from mini_torch.autograd.operation import Operation
 
@@ -12,9 +12,9 @@ class Index(Operation):
 
         parent, = node.parents
 
-        grad = np.zeros_like(parent.data)
+        grad = xp().zeros_like(parent.data)
 
-        np.add.at(
+        xp().add.at(
             grad,
             node.index,
             grad_output,

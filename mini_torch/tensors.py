@@ -1,6 +1,8 @@
 from numpy import typing
 import numpy as np
 
+from mini_torch.backend import (xp,asarray,asnumpy,is_gpu,to_cpu,to_gpu,cp)
+
 from mini_torch.autograd.operations import (
     ADD,
     SUB,
@@ -29,11 +31,11 @@ from mini_torch.autograd.operations import (
 # ==========================================================
 
 def _relu(x):
-    return np.maximum(x, 0)
+    return xp().maximum(x, 0)
 
 
 def _sigmoid(x):
-    return 1.0 / (1.0 + np.exp(-x))
+    return 1.0 / (1.0 + xp().exp(-x))
 
 
 class tensor:
@@ -55,7 +57,7 @@ class tensor:
     ):
         """Creates a tensor from array-like numeric values."""
 
-        array = np.asarray(data)
+        array = asarray(data)
 
         self._id = tensor._next_id
         tensor._next_id += 1
@@ -103,16 +105,41 @@ class tensor:
     def T(self):
         """Matrix transpose."""
         return self.transpose()
+    
+    @property
+    def device(self):
+
+        if isinstance(self.data,np.ndarray):
+            return "cpu"
+
+        return "cuda"
 
     # ==========================================================
     # Representation & Conversion
     # ==========================================================
+    def cpu(self):
+        """
+        Move tensor to CPU.
+        """
+
+        self.data = to_cpu(self.data)
+
+        return self
+    
+    def cuda(self):
+        """
+        Move tensor to GPU.
+        """
+
+        self.data = to_gpu(self.data)
+
+        return self
 
     def numpy(self):
-        return self.data
+        return to_cpu(self.data)
 
     def __repr__(self):
-        matrix = str(self.data)
+        matrix = str(asnumpy(self.data))
         return f"tensor({matrix}), dtype={self.dtype}, id={self._id}"
 
     # ==========================================================
@@ -207,7 +234,7 @@ class tensor:
         Clip tensor values into the interval [minimum, maximum].
         """
 
-        result = np.clip(
+        result = xp().clip(
             self.data,
             minimum,
             maximum,
@@ -227,26 +254,26 @@ class tensor:
     # ==========================================================
 
     def __add__(self, other):
-        return self._binary_op(other, np.add, ADD)
+        return self._binary_op(other, xp().add, ADD)
 
     def __sub__(self, other):
-        return self._binary_op(other, np.subtract, SUB)
+        return self._binary_op(other, xp().subtract, SUB)
 
     def __mul__(self, other):
-        return self._binary_op(other, np.multiply, MUL)
+        return self._binary_op(other, xp().multiply, MUL)
 
     def __truediv__(self, other):
-        return self._binary_op(other, np.divide, DIV)
+        return self._binary_op(other, xp().divide, DIV)
 
     def __matmul__(self, other):
-        return self._binary_op(other, np.matmul, MATMUL)
+        return self._binary_op(other, xp().matmul, MATMUL)
 
     def __pow__(self, exponent):
         """
         Raise every tensor element to the specified exponent.
         """
 
-        result = np.power(self.data, exponent)
+        result = xp().power(self.data, exponent)
 
         return self._attach_metadata(
             self._create_tensor(
@@ -286,13 +313,13 @@ class tensor:
     # ==========================================================
 
     def __neg__(self):
-        return self._unary_op(np.negative, NEG)
+        return self._unary_op(xp().negative, NEG)
 
     def exp(self):
-        return self._unary_op(np.exp, EXP)
+        return self._unary_op(xp().exp, EXP)
 
     def log(self):
-        return self._unary_op(np.log, LOG)
+        return self._unary_op(xp().log, LOG)
     
     # ==========================================================
     # Activation Functions
@@ -342,7 +369,7 @@ class tensor:
             axes = tuple(perm)
 
         return self._shape_op(
-            np.transpose(self.data, axes,),
+            xp().transpose(self.data, axes,),
             TRANSPOSE,
             axes=axes,
         )
@@ -353,7 +380,7 @@ class tensor:
         """
 
         return self._shape_op(
-            self.data.reshape(*shape),
+            xp().reshape(self.data,shape),
             RESHAPE,
             original_shape=self.shape,
             new_shape=shape,
@@ -372,7 +399,7 @@ class tensor:
         """
 
         return self._shape_op(
-            np.squeeze(self.data, axis=axis),
+            xp().squeeze(self.data, axis=axis),
             SQUEEZE,
             axis=axis,
         )
@@ -383,7 +410,7 @@ class tensor:
         """
 
         return self._shape_op(
-            np.expand_dims(self.data, axis=axis),
+            xp().expand_dims(self.data, axis=axis),
             UNSQUEEZE,
             axis=axis,
         )
@@ -394,7 +421,7 @@ class tensor:
 
     def sum(self, axis=None, keepdims=False):
         return self._shape_op(
-            np.sum(
+            xp().sum(
                 self.data,
                 axis=axis,
                 keepdims=keepdims,
@@ -407,7 +434,7 @@ class tensor:
 
     def mean(self, axis=None, keepdims=False):
         return self._shape_op(
-            np.mean(
+            xp().mean(
                 self.data,
                 axis=axis,
                 keepdims=keepdims,
@@ -424,7 +451,7 @@ class tensor:
         """
 
         return self._shape_op(
-            np.max(
+            xp().max(
                 self.data,
                 axis=axis,
                 keepdims=keepdims,
@@ -437,7 +464,7 @@ class tensor:
 
     def argmax(self, axis=None):
         return tensor(
-            np.argmax(
+            xp().argmax(
                 self.data,
                 axis=axis,
             )
@@ -448,13 +475,30 @@ class tensor:
     # ==========================================================
 
     def __getitem__(self, index):
-        """
-        Return the tensor element(s) at the specified index.
-        """
 
+        original_index = index
+        # Tensor index
         if isinstance(index, tensor):
-            index = index.data.astype(np.int64, copy= False)
 
+            index = index.data.astype(
+                xp().int64,
+                copy=False,
+            )
+
+        # List of indices
+        elif isinstance(index, list):
+
+            index = xp().asarray(
+                index,
+                dtype=np.int64,
+            )
+
+        # NumPy array
+        elif isinstance(index, np.ndarray):
+
+            index = xp().asarray(index)
+
+        # Tuple indexing
         elif isinstance(index, tuple):
 
             normalized = []
@@ -462,18 +506,52 @@ class tensor:
             for item in index:
 
                 if isinstance(item, tensor):
+
                     normalized.append(
-                        item.data.astype(np.int64)
+                        item.data.astype(
+                            np.int64,
+                            copy=False,
+                        )
                     )
+
+                elif isinstance(item, np.ndarray):
+
+                    normalized.append(
+                        xp().asarray(item)
+                    )
+
+                elif isinstance(item, range):
+
+                    normalized.append(
+                        xp().arange(
+                            item.start,
+                            item.stop,
+                            item.step,
+                        )
+                    )
+
                 else:
+
                     normalized.append(item)
 
             index = tuple(normalized)
 
-        return self._attach_metadata(self._create_tensor(self.data[index], parents=(self,), op=INDEX), index=index)
+        return self._attach_metadata(
+            self._create_tensor(
+                self.data[index],
+                parents=(self,),
+                op=INDEX,
+            ),
+            index=index,
+            original_index = original_index
+        )
     
     def backward(self):
 
         from mini_torch.autograd.engine import backward
 
         backward(self)
+
+    def item(self):
+
+        return to_cpu(self.data).item()

@@ -1,6 +1,5 @@
-import numpy as np
-
 from mini_torch.autograd.operation import Operation
+from mini_torch.backend import xp
 
 
 class Max(Operation):
@@ -19,8 +18,8 @@ class Max(Operation):
         max_values = node.data
 
         if axis is not None and not keepdims:
-            grad_output = np.expand_dims(grad_output, axis)
-            max_values = np.expand_dims(max_values, axis)
+            grad_output = xp().expand_dims(grad_output, axis)
+            max_values = xp().expand_dims(max_values, axis)
 
         mask = (parent.data == max_values)
 

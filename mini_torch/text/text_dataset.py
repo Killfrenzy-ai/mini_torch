@@ -1,6 +1,7 @@
 from mini_torch.data.dataset import Dataset
 from mini_torch.tensors import tensor
 from numbers import Integral
+from mini_torch.backend import xp
 
 import numpy as np
 
@@ -28,7 +29,7 @@ class TextDataset(Dataset):
                 "token_ids must contain more tokens than context_length."
             )
         
-        self.tokens = np.asarray(token_ids , dtype = np.int64)
+        self.tokens = xp().asarray(token_ids , dtype = np.int64)
 
     def __len__(self):
         return len(self.tokens) - self.context_length

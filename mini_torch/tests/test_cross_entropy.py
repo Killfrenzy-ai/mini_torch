@@ -16,8 +16,7 @@ def test_cross_entropy_forward():
     ])
 
     target = tensor([
-        [0., 1., 0.],
-        [1., 0., 0.],
+        [1,0],
     ])
 
     criterion = CrossEntropyLoss()
@@ -38,7 +37,7 @@ def test_cross_entropy_single_sample():
     ])
 
     target = tensor([
-        [0., 1., 0.]
+        [1]
     ])
 
     criterion = CrossEntropyLoss()
@@ -65,8 +64,8 @@ def test_cross_entropy_backward():
 
     target = tensor(
         [
-            [0., 1., 0.],
-            [1., 0., 0.],
+            1,
+            0
         ]
     )
 
@@ -95,8 +94,7 @@ def test_cross_entropy_gradcheck():
 
     target = tensor(
         [
-            [0., 1., 0.],
-            [1., 0., 0.],
+            1,0
         ]
     )
 
@@ -118,7 +116,7 @@ def test_cross_entropy_perfect_prediction():
     ])
 
     target = tensor([
-        [0., 1., 0.]
+        1
     ])
 
     criterion = CrossEntropyLoss()
@@ -134,7 +132,7 @@ def test_cross_entropy_wrong_prediction():
     ])
 
     target = tensor([
-        [0., 1., 0.]
+        1
     ])
 
     criterion = CrossEntropyLoss()
@@ -150,7 +148,7 @@ def test_cross_entropy_uniform_prediction():
     ])
 
     target = tensor([
-        [0., 1., 0.]
+        1
     ])
 
     criterion = CrossEntropyLoss()
@@ -174,9 +172,9 @@ def test_cross_entropy_batch():
     ])
 
     target = tensor([
-        [1., 0., 0.],
-        [0., 1., 0.],
-        [0., 0., 1.],
+        0,
+        1,
+        2,
     ])
 
     criterion = CrossEntropyLoss()
@@ -202,7 +200,7 @@ def test_cross_entropy_no_nan():
     ])
 
     target = tensor([
-        [0., 1., 0.]
+        1
     ])
 
     criterion = CrossEntropyLoss()
@@ -218,7 +216,7 @@ def test_cross_entropy_no_inf():
     ])
 
     target = tensor([
-        [0., 1., 0.]
+        1
     ])
 
     criterion = CrossEntropyLoss()
@@ -239,8 +237,8 @@ def test_cross_entropy_output_scalar():
     ])
 
     target = tensor([
-        [0., 1., 0.],
-        [1., 0., 0.],
+        1,
+        0
     ])
 
     criterion = CrossEntropyLoss()

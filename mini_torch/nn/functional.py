@@ -1,4 +1,4 @@
-import numpy as np
+from mini_torch.backend import xp
 
 def casual_mask(seq_len):
     """
@@ -8,8 +8,8 @@ def casual_mask(seq_len):
         (seq_len, seq_len)
     """
 
-    return np.triu(
-        np.ones(
+    return xp().triu(
+        xp().ones(
             (seq_len, seq_len),
             dtype=bool,
         ),

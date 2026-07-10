@@ -1,8 +1,9 @@
 from turtle import left
 from mini_torch.autograd.utils import unbroadcast
 import numpy as np
-
+import math
 from mini_torch.autograd.operation import Operation
+from mini_torch.backend import xp
 
 def normalize_axis(axis, ndim):
     """
@@ -89,12 +90,12 @@ class Sum(Operation):
         grad = grad_output
 
         if axis is not None and not keepdims:
-            grad = np.expand_dims(
+            grad = xp().expand_dims(
                 grad,
                 axis=axis,
             )
 
-        grad = np.broadcast_to(
+        grad = xp().broadcast_to(
             grad,
             original_shape,
         ).copy()
@@ -113,13 +114,13 @@ class Mean(Operation):
 
         if axis is None:
 
-            divisor = np.prod(original_shape)
+            divisor = math.prod(original_shape)
 
         else:
 
             if isinstance(axis, tuple):
 
-                divisor = np.prod(
+                divisor = math.prod(
                     [original_shape[a] for a in axis]
                 )
 
@@ -130,12 +131,12 @@ class Mean(Operation):
         grad = grad_output / divisor
 
         if axis is not None and not keepdims:
-            grad = np.expand_dims(
+            grad = xp().expand_dims(
                 grad,
                 axis=axis,
             )
 
-        grad = np.broadcast_to(
+        grad = xp().broadcast_to(
             grad,
             original_shape,
         ).copy()
@@ -157,11 +158,11 @@ class Transpose(Operation):
         parent, = node.parents
 
         if not hasattr(node, "axes"):
-            return (np.transpose(grad_output),)
+            return (xp().transpose(grad_output),)
 
-        inverse = np.argsort(node.axes)
+        inverse = tuple(np.argsort(node.axes))
 
-        return (np.transpose(grad_output, inverse),)
+        return (xp().transpose(grad_output, inverse),)
     
 class Squeeze(Operation):
     """Backward rule for squeeze."""
@@ -172,7 +173,7 @@ class Squeeze(Operation):
         if node.axis is None:
             grad = grad_output.reshape(parent.shape)
         else:
-            grad = np.expand_dims(grad_output, axis=node.axis)
+            grad = xp().expand_dims(grad_output, axis=node.axis)
 
         return (grad,)
     
@@ -180,7 +181,7 @@ class Unsqueeze(Operation):
     """Backward rule for unsqueeze."""
 
     def backward(self, node, grad_output):
-        grad = np.squeeze(grad_output, axis=node.axis)
+        grad = xp().squeeze(grad_output, axis=node.axis)
         return (grad,)
     
 class Pow(Operation):
@@ -194,7 +195,7 @@ class Pow(Operation):
         grad = (
             grad_output
             * exponent
-            * np.power(parent.data, exponent - 1)
+            * xp().power(parent.data, exponent - 1)
         )
 
         return (grad,)

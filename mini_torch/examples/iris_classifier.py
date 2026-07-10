@@ -4,6 +4,7 @@ from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
 
 from mini_torch.tensors import tensor
+from mini_torch.backend import xp
 
 from mini_torch.data import (
     TensorDataset,
@@ -23,7 +24,7 @@ from mini_torch.optim.sgd import SGD
 # Reproducibility
 # ==========================================================
 
-np.random.seed(42)
+xp().random.seed(42)
 
 
 # ==========================================================
@@ -43,7 +44,7 @@ labels = iris.target
 
 num_classes = 3
 
-y = np.eye(num_classes)[labels]
+y = xp().eye(num_classes)[labels]
 
 
 # ==========================================================

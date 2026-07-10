@@ -1,6 +1,7 @@
 import numpy as np
 
 from mini_torch.autograd.engine import backward
+from mini_torch.backend import xp
 
 
 def gradcheck(fn, inputs, eps=1e-6, atol=1e-5, rtol=1e-5):
@@ -33,7 +34,7 @@ def gradcheck(fn, inputs, eps=1e-6, atol=1e-5, rtol=1e-5):
     # Backward pass
     backward(output)
 
-    analytical = [np.array(inp.grad, copy=True)for inp in inputs]
+    analytical = [xp().array(inp.grad, copy=True)for inp in inputs]
 
     for input_idx, inp in enumerate(inputs):
         

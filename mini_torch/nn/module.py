@@ -1,4 +1,5 @@
 from mini_torch.parameter import Parameter
+from mini_torch.backend import (to_cpu, asarray)
 import numpy as np
 
 DEFAULT_CHECKPOINT_PATH = {r"C:\bitbucket\slm_experiments\mini_torch\mini_torch\checkpoints\model_checkpoint.npz"}
@@ -93,12 +94,15 @@ class Module:
                     f"got {data.shape}."
                 )
 
-            parameter.data[...] = data
+            parameter.data[...] = asarray(data)
 
     def save(self, path=DEFAULT_CHECKPOINT_PATH):
+        state = self.state_dict()
+
+        cpu_state = {key: to_cpu(value) for key,value in state.items()}
         np.savez(
             path,
-            **self.state_dict(),
+            **cpu_state,
         )
 
     def load(self, path=DEFAULT_CHECKPOINT_PATH):
@@ -149,3 +153,16 @@ class Module:
 
         for module in self._modules.values():
             yield from module.modules()
+
+    def to(self, device):
+
+        for parameter in self.parameters():
+            parameter.to(device)
+
+        return self
+
+    def cuda(self):
+        return self.to("cuda")
+
+    def cpu(self):
+        return self.to("cpu")

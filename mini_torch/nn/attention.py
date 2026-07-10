@@ -3,6 +3,7 @@ from mini_torch.nn.activations import Softmax
 
 import math
 import numpy as np
+from mini_torch.backend import xp
 
 
 class ScaledDotProductAttention(Module):
@@ -25,7 +26,7 @@ class ScaledDotProductAttention(Module):
         scores = query @ key.transpose(-2, -1) / scale
 
         if mask is not None:
-            scores.data = np.where(mask, -1e9, scores.data)
+            scores.data = xp().where(mask, -1e9, scores.data)
 
         weights = self.softmax(scores)
         output = weights @ value

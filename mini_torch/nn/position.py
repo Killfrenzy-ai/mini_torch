@@ -1,4 +1,5 @@
 import numpy as np
+from mini_torch.backend import xp
 
 from mini_torch.tensors import tensor
 from mini_torch.nn.module import Module
@@ -43,8 +44,8 @@ class PositionalEmbedding(Module):
 
         batch_size, seq_len = tokens.shape
 
-        positions = np.tile(
-            np.arange(seq_len),
+        positions = xp().tile(
+            xp().arange(seq_len),
             (batch_size, 1),
         )
 

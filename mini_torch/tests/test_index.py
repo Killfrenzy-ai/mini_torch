@@ -230,9 +230,9 @@ def test_index_metadata_saved():
 
     y = x[[1, 3]]
 
-    assert hasattr(y, "index")
+    assert hasattr(y, "original_index")
 
-    assert y.index == [1, 3]
+    assert y.original_index == [1, 3]
 
 
 # ==========================================================

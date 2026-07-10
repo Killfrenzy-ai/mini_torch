@@ -9,7 +9,7 @@ def test_bce_forward():
 
     prediction = tensor([[0.9], [0.2]])
 
-    target = tensor([[1.0], [0.0]])
+    target = tensor([[1], [0]])
 
     criterion = BCELoss()
 
@@ -34,7 +34,7 @@ def test_bce_backward():
         requires_grad=True,
     )
 
-    target = tensor([[1.0], [0.0]])
+    target = tensor([[1], [0]])
 
     criterion = BCELoss()
 
@@ -53,7 +53,7 @@ def test_bce_gradcheck():
         requires_grad=True,
     )
 
-    target = tensor([[1.0], [0.0]])
+    target = tensor([[1], [0]])
 
     criterion = BCELoss()
 
@@ -67,7 +67,7 @@ def test_bce_perfect_prediction():
 
     prediction = tensor([[0.999], [0.001]])
 
-    target = tensor([[1.0], [0.0]])
+    target = tensor([[1], [0]])
 
     criterion = BCELoss()
 
@@ -80,7 +80,7 @@ def test_bce_wrong_prediction():
 
     prediction = tensor([[0.001], [0.999]])
 
-    target = tensor([[1.0], [0.0]])
+    target = tensor([[1], [0]])
 
     criterion = BCELoss()
 

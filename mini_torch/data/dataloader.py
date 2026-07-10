@@ -1,6 +1,7 @@
 import numpy as np
 
 from mini_torch.tensors import tensor
+from mini_torch.backend import xp
 
 
 class DataLoader:
@@ -81,7 +82,7 @@ class DataLoader:
 
         for column in zip(*samples):
 
-            array = np.stack(
+            array = xp().stack(
                 [item.data for item in column]
             )
 

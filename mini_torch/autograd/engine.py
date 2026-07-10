@@ -1,6 +1,7 @@
 from .graph import topological_sort
 
 import numpy as np
+from mini_torch.backend import xp
 
 
 def backward(loss):
@@ -16,7 +17,7 @@ def backward(loss):
         raise ValueError("Loss tensor must be a scalar (single value).")
 
     nodes = topological_sort(loss)
-    loss.grad = np.ones_like(loss.data)
+    loss.grad = xp().ones_like(loss.data)
 
     for node in reversed(nodes):
         if node.op is None:

@@ -4,7 +4,7 @@ import os
 import pickle
 
 
-DEFAULT_CHECKPOINT_PATH = {r"checkpoints\model_checkpoint.npz"}
+DEFAULT_CHECKPOINT_PATH = r"checkpoints\tokenizer.pkl"
 
 class CharacterTokenizer(Tokenizer):
     """
