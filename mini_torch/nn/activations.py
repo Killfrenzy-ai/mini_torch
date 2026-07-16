@@ -21,3 +21,9 @@ class Softmax(Module):
 
     def forward(self, input):
         return input.softmax(axis=self.axis)
+
+class SiLU(Module):
+
+    def forward(self, x):
+
+        return x * x.sigmoid()

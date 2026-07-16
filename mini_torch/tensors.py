@@ -24,6 +24,7 @@ from mini_torch.autograd.operations import (
     CLIP,
     MAX,
     INDEX,
+    STACK,
 )
 
 # ==========================================================
@@ -36,6 +37,37 @@ def _relu(x):
 
 def _sigmoid(x):
     return 1.0 / (1.0 + xp().exp(-x))
+
+def stack(tensors, axis=0):
+
+    if len(tensors) == 0:
+        raise ValueError(
+            "stack expects at least one tensor."
+        )
+
+    tensors = tuple(
+        tensor._ensure_tensor(t)
+        for t in tensors
+    )
+
+    result = xp().stack(
+        [t.data for t in tensors],
+        axis=axis,
+    )
+
+    out = tensor(
+        result,
+        parents=tensors,
+        op=STACK,
+        requires_grad=any(
+            t.requires_grad
+            for t in tensors
+        ),
+    )
+
+    out.axis = axis
+
+    return out
 
 
 class tensor:

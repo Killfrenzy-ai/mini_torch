@@ -80,6 +80,9 @@ class Module:
 
         for name, data in state_dict.items():
 
+            if name == "lm_head.weight":
+                continue
+                
             if name not in parameter_map:
                 raise KeyError(
                     f"Unexpected parameter '{name}'."

@@ -7,7 +7,8 @@ from mini_torch.nn.linear import Linear
 from mini_torch.nn.module_list import ModuleList
 from mini_torch.nn.transformer_block import TransformerBlock
 from mini_torch.nn.functional import casual_mask
-
+from mini_torch.parameter import Parameter
+from mini_torch.backend import xp
 
 class GPT(Module):
 
@@ -59,10 +60,8 @@ class GPT(Module):
 
         self.norm = LayerNorm(embed_dim)
 
-        self.lm_head = Linear(
-            embed_dim,
-            vocab_size,
-        )
+        self.lm_head = Linear(embed_dim, vocab_size, bias=True)
+        self.lm_head.weight = None
 
     def forward(self, tokens):
 
@@ -87,6 +86,6 @@ class GPT(Module):
 
         x = self.norm(x)
 
-        logits = self.lm_head(x)
+        logits =( x @ self.token_embedding.weight.transpose() + self.lm_head.bias)
 
         return logits

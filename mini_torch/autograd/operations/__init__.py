@@ -11,6 +11,7 @@ from .add import (
     SQUEEZE,
     UNSQUEEZE,
     POW,
+    STACK
 )
 
 from .unary import (

@@ -199,6 +199,26 @@ class Pow(Operation):
         )
 
         return (grad,)
+
+class Stack(Operation):
+
+    def backward(self, node, grad_output):
+
+        axis = node.axis
+
+        gradients = []
+
+        for i in range(len(node.parents)):
+
+            grad = xp().take(
+                grad_output,
+                i,
+                axis=axis,
+            )
+
+            gradients.append(grad)
+
+        return tuple(gradients)
     
 ADD = Add()
 SUB = Sub()
@@ -212,3 +232,4 @@ RESHAPE = Reshape()
 SQUEEZE = Squeeze()
 UNSQUEEZE = Unsqueeze()
 POW = Pow()
+STACK = Stack()
