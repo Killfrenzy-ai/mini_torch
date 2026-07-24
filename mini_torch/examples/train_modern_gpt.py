@@ -1,6 +1,5 @@
 import time
 import math
-import os
 from pathlib import Path
 
 from mini_torch.nn.modern_gpt import ModernGPT
@@ -13,27 +12,24 @@ from mini_torch.scheduler.cosine_annealing_lr import CosineAnnealingLR
 from mini_torch.data.dataloader import DataLoader
 from mini_torch.nn.utils import clip_grad_norm
 
+from mini_torch.amp.autocast import autocast
+from mini_torch.amp.grad_scaler import GradScaler
+
 
 # ==========================================================
 # Hyperparameters
 # ==========================================================
 
 CONTEXT_LENGTH = 128
-
 EMBED_DIM = 128
-
 NUM_HEADS = 4
-
 NUM_LAYERS = 4
-
-FF_HIDDEN_DIM = 352
+FF_HIDDEN_DIM = 384
 
 BATCH_SIZE = 32
 
 LEARNING_RATE = 3e-4
-
-EPOCHS = 5
-
+EPOCHS = 10
 DROPOUT = 0.1
 
 PRINT_EVERY = 1000
@@ -85,6 +81,18 @@ use_gpu()
 
 
 # ==========================================================
+# AMP GradScaler
+# ==========================================================
+
+scaler = GradScaler(
+    init_scale=2.0 ** 16,
+    growth_factor=2.0,
+    backoff_factor=0.5,
+    growth_interval=2000,
+)
+
+
+# ==========================================================
 # Load dataset
 # ==========================================================
 
@@ -113,14 +121,27 @@ print("Building tokenizer...")
 
 tokenizer = BPETokenizer()
 
-tokenizer.fit(
-    text,
-    vocab_size=512,
-)
+try:
 
-tokenizer.save(
-    str(TOKENIZER_PATH)
-)
+    print("Loading tokenizer...")
+
+    tokenizer.load(
+        TOKENIZER_PATH
+    )
+
+except FileNotFoundError:
+
+    print(
+        "No previous tokenizer "
+        "checkpoint found."
+    )
+
+    tokenizer.fit(text)
+
+    tokenizer.save(
+        TOKENIZER_PATH
+    )
+
 
 print(
     f"Vocabulary Size : "
@@ -142,12 +163,17 @@ tokens = tokenizer.encode(text)
 # ==========================================================
 
 split = int(
-    0.9 * len(tokens)
+    0.9
+    * len(tokens)
 )
 
-train_tokens = tokens[:split]
+train_tokens = (
+    tokens[:split]
+)
 
-validation_tokens = tokens[split:]
+validation_tokens = (
+    tokens[split:]
+)
 
 
 # ==========================================================
@@ -181,6 +207,7 @@ validation_loader = DataLoader(
     shuffle=False,
 )
 
+
 print(
     f"Training Samples   : "
     f"{len(train_dataset)}"
@@ -211,6 +238,27 @@ model = ModernGPT(
 model.cuda()
 
 
+try:
+
+    print("Loading checkpoint...")
+
+    model.load(
+        MODEL_PATH
+    )
+
+    model.cuda()
+
+    print(
+        "Checkpoint loaded."
+    )
+
+except FileNotFoundError:
+
+    print(
+        "No model checkpoint found."
+    )
+
+
 # ==========================================================
 # Loss
 # ==========================================================
@@ -227,6 +275,23 @@ optimizer = AdamW(
     lr=LEARNING_RATE,
     weight_decay=WEIGHT_DECAY,
 )
+
+
+try:
+
+    optimizer.load(
+        OPTIMIZER_PATH
+    )
+
+    print(
+        "Optimizer state loaded."
+    )
+
+except FileNotFoundError:
+
+    print(
+        "No optimizer checkpoint found."
+    )
 
 
 # ==========================================================
@@ -248,12 +313,31 @@ warmup_steps = int(
     * total_steps
 )
 
+
 scheduler = CosineAnnealingLR(
     optimizer,
     total_steps=total_steps,
     warmup_steps=warmup_steps,
     eta_min=1e-5,
 )
+
+
+try:
+
+    scheduler.load(
+        SCHEDULER_PATH
+    )
+
+    print(
+        "Scheduler state loaded."
+    )
+
+except FileNotFoundError:
+
+    print(
+        "No scheduler checkpoint found."
+    )
+
 
 print(
     f"Optimizer Steps/Epoch : "
@@ -289,16 +373,29 @@ def evaluate(
     model.eval()
 
     total_loss = 0.0
-
     batch_count = 0
+
 
     for x, y in loader:
 
         x = x.cuda()
-
         y = y.cuda()
 
-        logits = model(x)
+
+        # ------------------------------------------
+        # Mixed-precision forward
+        # ------------------------------------------
+
+        with autocast():
+
+            logits = model(x)
+
+
+        # ------------------------------------------
+        # Loss-sensitive operations in FP32
+        # ------------------------------------------
+
+        logits = logits.float()
 
         probabilities = logits.softmax(
             axis=-1
@@ -311,14 +408,19 @@ def evaluate(
 
         targets = y.reshape(-1)
 
+
         loss = criterion(
             probabilities,
             targets,
         )
 
-        total_loss += loss.item()
+
+        total_loss += (
+            loss.item()
+        )
 
         batch_count += 1
+
 
     return (
         total_loss
@@ -334,9 +436,12 @@ print(
     "Starting ModernGPT training...\n"
 )
 
+
 start = time.time()
 
-best_validation_loss = float("inf")
+best_validation_loss = (
+    float("inf")
+)
 
 
 for epoch in range(EPOCHS):
@@ -357,36 +462,50 @@ for epoch in range(EPOCHS):
     ):
 
         x = x.cuda()
-
         y = y.cuda()
 
 
-        # ------------------------------------------
-        # Forward
-        # ------------------------------------------
+        # ==================================================
+        # Mixed-precision forward
+        # ==================================================
 
-        logits = model(x)
+        with autocast():
+
+            logits = model(x)
+
+
+        # ==================================================
+        # FP32 loss computation
+        #
+        # Softmax and CrossEntropy remain FP32 for
+        # numerical stability.
+        # ==================================================
+
+        logits = logits.float()
 
         probabilities = logits.softmax(
             axis=-1
         )
 
-        probabilities = probabilities.reshape(
-            -1,
-            tokenizer.vocab_size,
+        probabilities = (
+            probabilities.reshape(
+                -1,
+                tokenizer.vocab_size,
+            )
         )
 
         targets = y.reshape(-1)
 
 
-        # ------------------------------------------
-        # Loss
-        # ------------------------------------------
-
         raw_loss = criterion(
             probabilities,
             targets,
         )
+
+
+        # ==================================================
+        # Gradient accumulation
+        # ==================================================
 
         loss = (
             raw_loss
@@ -394,46 +513,131 @@ for epoch in range(EPOCHS):
         )
 
 
-        # ------------------------------------------
+        # ==================================================
+        # Loss scaling
+        # ==================================================
+
+        scaled_loss = (
+            scaler.scale_loss(
+                loss
+            )
+        )
+
+
+        # ==================================================
         # Backward
-        # ------------------------------------------
+        # ==================================================
 
-        loss.backward()
+        scaled_loss.backward()
 
 
-        # ------------------------------------------
+        # ==================================================
         # Optimizer step
-        # ------------------------------------------
+        # ==================================================
 
         should_step = (
-            (i + 1)
-            % ACCUMULATION_STEPS
-            == 0
+
+            (
+                (i + 1)
+                % ACCUMULATION_STEPS
+                == 0
+            )
+
             or
-            (i + 1)
-            == len(train_loader)
+
+            (
+                (i + 1)
+                == len(train_loader)
+            )
         )
 
 
         if should_step:
 
-            grad_norm = clip_grad_norm(
-                model.parameters(),
-                max_norm=1.0,
+            # ----------------------------------------------
+            # Convert scaled gradients back to their
+            # true magnitude BEFORE clipping.
+            # ----------------------------------------------
+
+            scaler.unscale_(
+                optimizer
             )
 
-            optimizer.step()
 
-            scheduler.step()
+            # ----------------------------------------------
+            # Detect FP16 overflow
+            # ----------------------------------------------
+
+            found_inf = (
+                scaler.found_inf(
+                    optimizer
+                )
+            )
+
+
+            if not found_inf:
+
+                # ------------------------------------------
+                # Gradient clipping must happen after
+                # gradient unscaling.
+                # ------------------------------------------
+
+                grad_norm = (
+                    clip_grad_norm(
+                        model.parameters(),
+                        max_norm=1.0,
+                    )
+                )
+
+
+                # ------------------------------------------
+                # FP32 optimizer update
+                # ------------------------------------------
+
+                optimizer.step()
+
+
+                # ------------------------------------------
+                # Advance scheduler only when the
+                # optimizer actually performed an update.
+                # ------------------------------------------
+
+                scheduler.step()
+
+
+            else:
+
+                print(
+                    "Gradient overflow detected. "
+                    "Skipping optimizer step. "
+                    f"Scale: {scaler.scale}"
+                )
+
+
+            # ----------------------------------------------
+            # Clear accumulated gradients regardless of
+            # whether the optimizer step was skipped.
+            # ----------------------------------------------
 
             optimizer.zero_grad()
 
 
-        # ------------------------------------------
-        # Statistics
-        # ------------------------------------------
+            # ----------------------------------------------
+            # Update dynamic loss scale
+            # ----------------------------------------------
 
-        epoch_loss += raw_loss.item()
+            scaler.update(
+                found_inf
+            )
+
+
+        # ==================================================
+        # Statistics
+        # ==================================================
+
+        epoch_loss += (
+            raw_loss.item()
+        )
 
         batch_count += 1
 
@@ -449,6 +653,7 @@ for epoch in range(EPOCHS):
                 / batch_count
             )
 
+
             print(
                 f"Epoch "
                 f"[{epoch + 1}/{EPOCHS}] "
@@ -462,7 +667,9 @@ for epoch in range(EPOCHS):
                 f"| Grad Norm: "
                 f"{grad_norm:.3f} "
                 f"| LR: "
-                f"{optimizer.lr:.6f}"
+                f"{optimizer.lr:.6f} "
+                f"| Loss Scale: "
+                f"{scaler.scale:.0f}"
             )
 
 
@@ -492,12 +699,16 @@ for epoch in range(EPOCHS):
     # Perplexity
     # ======================================================
 
-    train_perplexity = math.exp(
-        train_loss
+    train_perplexity = (
+        math.exp(
+            train_loss
+        )
     )
 
-    validation_perplexity = math.exp(
-        validation_loss
+    validation_perplexity = (
+        math.exp(
+            validation_loss
+        )
     )
 
 
@@ -526,6 +737,11 @@ for epoch in range(EPOCHS):
         f"{validation_perplexity:.3f}"
     )
 
+    print(
+        f"AMP Loss Scale    : "
+        f"{scaler.scale:.0f}"
+    )
+
 
     # ======================================================
     # Best checkpoint
@@ -540,9 +756,11 @@ for epoch in range(EPOCHS):
             validation_loss
         )
 
+
         model.save(
             str(MODEL_PATH)
         )
+
 
         print(
             "New best ModernGPT "
@@ -564,13 +782,20 @@ for epoch in range(EPOCHS):
         )
     )
 
+
     optimizer.save(
-        str(OPTIMIZER_PATH)
+        str(
+            OPTIMIZER_PATH
+        )
     )
 
+
     scheduler.save(
-        str(SCHEDULER_PATH)
+        str(
+            SCHEDULER_PATH
+        )
     )
+
 
     print(
         "Checkpoint saved.\n"
@@ -583,7 +808,10 @@ for epoch in range(EPOCHS):
 
 end = time.time()
 
-print("=" * 60)
+
+print(
+    "=" * 60
+)
 
 print(
     "ModernGPT Training Complete!"
@@ -599,4 +827,6 @@ print(
     f"{end - start:.2f} seconds"
 )
 
-print("=" * 60)
+print(
+    "=" * 60
+)

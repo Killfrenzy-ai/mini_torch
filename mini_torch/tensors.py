@@ -25,6 +25,8 @@ from mini_torch.autograd.operations import (
     MAX,
     INDEX,
     STACK,
+    ROTARY_EMBEDDING,
+    CAST,
 )
 
 # ==========================================================
@@ -173,6 +175,30 @@ class tensor:
     def __repr__(self):
         matrix = str(asnumpy(self.data))
         return f"tensor({matrix}), dtype={self.dtype}, id={self._id}"
+
+    def astype(self, dtype):
+
+        if self.data.dtype == dtype:
+            return self
+
+        result = self.data.astype(
+            dtype,
+            copy=False,
+        )
+
+        return self._create_tensor(
+            result,
+            parents=(self,),
+            op=CAST,
+        )
+
+
+    def half(self):
+        return self.astype(xp().float16)
+
+
+    def float(self):
+        return self.astype(xp().float32)
 
     # ==========================================================
     # Internal Helpers
@@ -445,6 +471,107 @@ class tensor:
             xp().expand_dims(self.data, axis=axis),
             UNSQUEEZE,
             axis=axis,
+        )
+
+
+    # ==========================================================
+    # Specialized Operations
+    # ==========================================================
+
+    def rotary_embedding(
+        self,
+        cos,
+        sin,
+    ):
+        """
+        Apply fused Rotary Positional Embeddings (RoPE).
+
+        Expected input shape:
+            (batch_size, num_heads, seq_len, head_dim)
+
+        cos/sin shape:
+            (1, 1, seq_len, head_dim // 2)
+        """
+
+        if self.ndim != 4:
+            raise ValueError(
+                "rotary_embedding expects a 4D tensor "
+                "with shape (B, H, T, D)."
+            )
+
+        if self.shape[-1] % 2 != 0:
+            raise ValueError(
+                "The last dimension must be even "
+                "for rotary embeddings."
+            )
+
+        expected_shape = (
+            1,
+            1,
+            self.shape[-2],
+            self.shape[-1] // 2,
+        )
+
+        if cos.shape != expected_shape:
+            raise ValueError(
+                f"Expected cos shape {expected_shape}, "
+                f"got {cos.shape}."
+            )
+
+        if sin.shape != expected_shape:
+            raise ValueError(
+                f"Expected sin shape {expected_shape}, "
+                f"got {sin.shape}."
+            )
+
+        # ------------------------------------------
+        # Split even and odd dimensions
+        #
+        # Important:
+        # These operate directly on backend arrays,
+        # so no autograd nodes are created.
+        # ------------------------------------------
+
+        x_even = self.data[..., 0::2]
+        x_odd = self.data[..., 1::2]
+
+        # ------------------------------------------
+        # Apply rotation
+        # ------------------------------------------
+
+        rotated_even = (
+            x_even * cos
+            - x_odd * sin
+        )
+
+        rotated_odd = (
+            x_even * sin
+            + x_odd * cos
+        )
+
+        # ------------------------------------------
+        # Interleave results
+        # ------------------------------------------
+
+        result = xp().empty_like(
+            self.data
+        )
+
+        result[..., 0::2] = rotated_even
+        result[..., 1::2] = rotated_odd
+
+        # ------------------------------------------
+        # Create ONE autograd node
+        # ------------------------------------------
+
+        return self._attach_metadata(
+            self._create_tensor(
+                result,
+                parents=(self,),
+                op=ROTARY_EMBEDDING,
+            ),
+            cos=cos,
+            sin=sin,
         )
 
     # ==========================================================

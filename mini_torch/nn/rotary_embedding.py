@@ -1,6 +1,5 @@
 from mini_torch.nn.module import Module
 from mini_torch.backend import xp
-from mini_torch.tensors import tensor, stack
 
 
 class RotaryEmbedding(Module):
@@ -21,26 +20,62 @@ class RotaryEmbedding(Module):
         self.head_dim = head_dim
         self.max_seq_len = max_seq_len
 
+        # ------------------------------------------
+        # Compute inverse frequencies
+        # ------------------------------------------
+
         inv_freq = 1.0 / (
             base ** (
-                xp().arange(0, head_dim, 2)
+                xp().arange(
+                    0,
+                    head_dim,
+                    2,
+                )
                 / head_dim
             )
         )
 
-        positions = xp().arange(max_seq_len)
+        # ------------------------------------------
+        # Position indices
+        # ------------------------------------------
+
+        positions = xp().arange(
+            max_seq_len
+        )
 
         frequencies = (
             positions[:, None]
             * inv_freq[None, :]
         )
 
-        self.cos = xp().cos(frequencies)
-        self.sin = xp().sin(frequencies)
+        # ------------------------------------------
+        # Precompute RoPE constants
+        #
+        # Keep these as raw NumPy/CuPy arrays.
+        # They do not require gradients.
+        # ------------------------------------------
+
+        self.cos = xp().cos(
+            frequencies
+        ).reshape(
+            1,
+            1,
+            max_seq_len,
+            head_dim // 2,
+        )
+
+        self.sin = xp().sin(
+            frequencies
+        ).reshape(
+            1,
+            1,
+            max_seq_len,
+            head_dim // 2,
+        )
 
     def forward(self, x):
 
-        B, H, T, D = x.shape
+        _, _, T, D = x.shape
 
         if D != self.head_dim:
             raise ValueError(
@@ -54,25 +89,33 @@ class RotaryEmbedding(Module):
                 f"maximum {self.max_seq_len}."
             )
 
-        cos = tensor(
-            self.cos[:T]
-        ).reshape(
-            1,
-            1,
-            T,
-            D // 2,
+        # ------------------------------------------
+        # Select cached positions
+        #
+        # Raw backend slicing:
+        # no Tensor operation
+        # no autograd node
+        # ------------------------------------------
+
+        cos = self.cos[
+            :,
+            :,
+            :T,
+            :,
+        ]
+
+        sin = self.sin[
+            :,
+            :,
+            :T,
+            :,
+        ]
+
+        # ------------------------------------------
+        # Single fused autograd operation
+        # ------------------------------------------
+
+        return x.rotary_embedding(
+            cos,
+            sin,
         )
-
-        sin = tensor(self.sin[:T]).reshape( 1, 1, T, D // 2, )
-
-        x_even = x[..., 0::2]
-        x_odd = x[..., 1::2]
-
-        rotated_even = ( x_even * cos - x_odd * sin )
-
-        rotated_odd = ( x_even * sin + x_odd * cos)
-
-        rotated = stack(
-            [rotated_even, rotated_odd], axis=-1,)
-
-        return rotated.reshape(B,H,T,D,)

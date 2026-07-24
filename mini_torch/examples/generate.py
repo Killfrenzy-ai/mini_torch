@@ -6,23 +6,25 @@ from mini_torch.tensors import tensor
 from mini_torch.text.bpe_tokenizer import BPETokenizer
 from mini_torch.backend import use_gpu, to_cpu
 from mini_torch.nn.sampling import (top_k_logits, top_p_logits)
-
+from mini_torch.nn.modern_gpt import ModernGPT
+from mini_torch.amp.autocast import autocast
 use_gpu()
 
 tokenizer = BPETokenizer()
-tokenizer.load( "checkpoints/tokenizer.pkl")
+tokenizer.load( "checkpoints/modern_gpt/bpe_tokenizer.pkl")
 
-model = GPT(
+model = ModernGPT(
     vocab_size=tokenizer.vocab_size,
     embed_dim=128,
     num_heads=4,
     num_layers=4,
     max_seq_len=128,
-    dropout=0.0,
+    ff_hidden_dim=384,
+    dropout=0.01,
 )
 
 model.load(
-    "checkpoints/gpt_best.npz"
+    "checkpoints/modern_gpt/modern_gpt_best.npz"
 )
 
 model.cuda()

@@ -7,7 +7,9 @@ from mini_torch.nn.module_list import ModuleList
 from mini_torch.nn.modern_transformer_block import (
     ModernTransformerBlock
 )
+from mini_torch.parameter import Parameter
 from mini_torch.nn.functional import casual_mask
+from mini_torch.backend import xp
 
 
 class ModernGPT(Module):
@@ -89,12 +91,7 @@ class ModernGPT(Module):
         # Language modeling head
         # ------------------------------------------
 
-        self.lm_head = Linear(
-            embed_dim,
-            vocab_size,
-            bias=True,
-        )
-        self.lm_head.weight = None
+        self.lm_head_bias = Parameter(xp().zeros(vocab_size))
 
     def forward(self, tokens):
 
@@ -149,6 +146,6 @@ class ModernGPT(Module):
         # Vocabulary logits
         # ------------------------------------------
 
-        logits = self.lm_head(x)
+        logits = (x @ self.token_embedding.weight.transpose(1,0))
 
         return logits

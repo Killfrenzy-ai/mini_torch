@@ -1,6 +1,7 @@
 from mini_torch.backend import xp
 from mini_torch.nn.module import Module
 from mini_torch.parameter import Parameter
+from mini_torch.amp.autocast import is_autocast_enabled
 
 class RMSNorm(Module):
 
@@ -13,7 +14,36 @@ class RMSNorm(Module):
 
     def forward(self, x):
 
-        rms = (
-            (x ** 2).mean(axis=-1, keepdims=True,) + self.eps) ** 0.5
+        original_dtype = x.dtype
 
-        return (x / rms ) * self.weight
+        if is_autocast_enabled():
+            x_compute = x.float()
+        else:
+            x_compute = x
+
+        variance = (
+            x_compute ** 2
+        ).mean(
+            axis=-1,
+            keepdims=True,
+        )
+
+        normalized = (
+            x_compute
+            / (
+                variance
+                + self.eps
+            ) ** 0.5
+        )
+
+        output = (
+            normalized
+            * self.weight
+        )
+
+        if is_autocast_enabled():
+            output = output.astype(
+                original_dtype
+            )
+
+        return output

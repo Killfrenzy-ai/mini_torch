@@ -3,6 +3,10 @@ from mini_torch.parameter import Parameter
 from mini_torch.tensors import tensor
 from mini_torch.nn.init import get_initializer
 from mini_torch.backend import xp
+from mini_torch.amp.autocast import (
+    is_autocast_enabled,
+)
+
 
 class Linear(Module):
     """
@@ -37,14 +41,30 @@ class Linear(Module):
         Returns:
             tensor: Output tensor of shape (batch_size, out_features).
         """
-        if x.shape[-1] != self.in_features:
-            raise ValueError(
-                f"Expected input with {self.in_features} features "
-                f"but received {x.shape[-1]}."
+        if is_autocast_enabled():
+
+            x_compute = x.half()
+            weight_compute = self.weight.half()
+
+            output = (
+                x_compute
+                @ weight_compute
             )
+
+            if self.bias is not None:
+
+                output = (
+                    output
+                    + self.bias.half()
+                )
+
+            return output
+
         output = x @ self.weight
+
         if self.bias is not None:
             output = output + self.bias
+
         return output
     
     def __repr__(self):

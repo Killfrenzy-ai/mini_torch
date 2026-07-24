@@ -27,9 +27,9 @@ NUM_LAYERS = 4
 
 BATCH_SIZE = 32
 
-LEARNING_RATE = 3e-4
+LEARNING_RATE = 1e-4
 
-EPOCHS = 5
+EPOCHS = 15
 
 DROPOUT = 0.1
 
@@ -157,7 +157,9 @@ steps_per_epoch = math.ceil(len(train_loader) / accumulation_steps)
 total_steps = EPOCHS * steps_per_epoch
 warmup_steps = int(0.03 * total_steps)
 
-scheduler = CosineAnnealingLR(optimizer, total_steps=total_steps,warmup_steps = warmup_steps, eta_min=1e-5,)
+optimizer.lr = 1e-4
+
+scheduler = CosineAnnealingLR(optimizer, total_steps=total_steps,warmup_steps = 0, eta_min=1e-5,)
 
 try:
     scheduler.load(

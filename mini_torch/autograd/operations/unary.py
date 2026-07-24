@@ -25,7 +25,22 @@ class Log(Operation):
         grad = grad_output / parent.data
 
         return (grad,)
-    
+
+class Cast(Operation):
+
+    def backward(self, node, grad_output):
+
+        parent, = node.parents
+
+        return (
+            grad_output.astype(
+                parent.data.dtype,
+                copy=False,
+            ),
+        )
+
+
+CAST = Cast()    
 NEG = Neg()
 EXP = Exp()
 LOG = Log()

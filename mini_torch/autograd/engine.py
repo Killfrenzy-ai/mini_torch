@@ -30,7 +30,14 @@ def backward(loss):
         for parent, grad in zip(node.parents, grads):
             if not parent.requires_grad:
                 continue
+
+            if grad is None:
+                continue
+
             if parent.grad is None:
+
                 parent.grad = grad
+
             else:
+
                 parent.grad += grad
