@@ -27,6 +27,7 @@ NUM_LAYERS = 4
 FF_HIDDEN_DIM = 384
 
 BATCH_SIZE = 32
+VOCAB_SIZE = 4096
 
 LEARNING_RATE = 3e-4
 EPOCHS = 10
@@ -101,7 +102,7 @@ print("Loading dataset...")
 DATA_PATH = (
     Path(__file__).parent
     / "data"
-    / "tiny_shakespeare.txt"
+    / "full_shakespeare.txt"
 )
 
 with open(
@@ -117,30 +118,32 @@ with open(
 # Build BPE tokenizer
 # ==========================================================
 
-print("Building tokenizer...")
+print("=" * 60)
+print("Tokenizer")
+print("=" * 60)
 
 tokenizer = BPETokenizer()
 
-try:
+if TOKENIZER_PATH.exists():
 
     print("Loading tokenizer...")
 
-    tokenizer.load(
-        TOKENIZER_PATH
+    tokenizer.load(TOKENIZER_PATH)
+
+else:
+
+    print("Training tokenizer...")
+
+    tokenizer.train(
+        text,
+        vocab_size=VOCAB_SIZE,
     )
 
-except FileNotFoundError:
+    tokenizer.save(TOKENIZER_PATH)
 
-    print(
-        "No previous tokenizer "
-        "checkpoint found."
-    )
-
-    tokenizer.fit(text)
-
-    tokenizer.save(
-        TOKENIZER_PATH
-    )
+print(
+    f"Vocabulary Size : {tokenizer.vocab_size:,}"
+)
 
 
 print(

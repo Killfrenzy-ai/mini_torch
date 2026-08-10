@@ -20,23 +20,23 @@ model = ModernGPT(
     num_layers=4,
     max_seq_len=128,
     ff_hidden_dim=384,
-    dropout=0.01,
+    dropout=0.1,
 )
 
 model.load(
-    "checkpoints/modern_gpt/modern_gpt_best.npz"
+    "checkpoints/modern_gpt/modern_gpt_epoch_5.npz"
 )
 
 model.cuda()
 model.eval()
 
-prompt = "ROMEO: "
+prompt = "ACT I  Scene I. "
 
 tokens = tokenizer.encode(prompt)
 
 context_length = 128
-max_new_tokens = 300
-temperature = 0.8
+max_new_tokens = 500
+temperature = 0.6
 
 for _ in range(max_new_tokens):
 
@@ -46,9 +46,9 @@ for _ in range(max_new_tokens):
 
     next_logits = logits[:, -1, :]
 
-    filtered = top_k_logits(next_logits.data[0] / temperature, k=40,)
+    filtered = top_k_logits(next_logits.data[0] / temperature, k=20,)
 
-    filtered = top_p_logits(filtered,p=0.95,)
+    filtered = top_p_logits(filtered,p=0.9,)
 
     filtered = tensor(filtered)
 
