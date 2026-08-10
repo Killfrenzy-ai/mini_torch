@@ -20,8 +20,8 @@ class RotaryEmbeddingOperation(Operation):
         grad_output,
     ):
 
-        cos = node.cos
-        sin = node.sin
+        cos = node.metadata["cos"]
+        sin = node.metadata["sin"]
 
         # ------------------------------------------
         # Split output gradient into even/odd parts

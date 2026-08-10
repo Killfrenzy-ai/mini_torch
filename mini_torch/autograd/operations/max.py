@@ -11,9 +11,9 @@ class Max(Operation):
 
         parent, = node.parents
 
-        axis = node.axis
-        keepdims = node.keepdims
-        original_shape = node.original_shape
+        axis = node.metadata["axis"]
+        keepdims = node.metadata["keepdims"]
+        original_shape = node.metadata["original_shape"]
 
         max_values = node.data
 

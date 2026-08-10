@@ -83,9 +83,9 @@ class Sum(Operation):
 
         parent, = node.parents
 
-        axis = normalize_axis(node.axis, parent.data.ndim)
-        keepdims = node.keepdims
-        original_shape = node.original_shape
+        axis = normalize_axis(node.metadata["axis"], parent.data.ndim)
+        keepdims = node.metadata["keepdims"]
+        original_shape = node.metadata["original_shape"]
 
         grad = grad_output
 
@@ -108,9 +108,9 @@ class Mean(Operation):
 
         parent, = node.parents
 
-        axis = normalize_axis(node.axis, parent.data.ndim)
-        keepdims = node.keepdims
-        original_shape = node.original_shape
+        axis = normalize_axis(node.metadata["axis"], parent.data.ndim)
+        keepdims = node.metadata["keepdims"]
+        original_shape = node.metadata["original_shape"]
 
         if axis is None:
 
@@ -155,14 +155,15 @@ class Transpose(Operation):
     """Backward rule for transpose."""
 
     def backward(self, node, grad_output):
-        parent, = node.parents
+        axes = node.metadata.get("axes")
 
-        if not hasattr(node, "axes"):
+        # No axes specified -> reverse dimensions
+        if axes is None:
             return (xp().transpose(grad_output),)
 
-        inverse = tuple(np.argsort(node.axes))
+        inverse = tuple(np.argsort(axes))
 
-        return (xp().transpose(grad_output, inverse),)
+        return (xp().transpose(grad_output,inverse,),)
     
 class Squeeze(Operation):
     """Backward rule for squeeze."""
@@ -170,10 +171,10 @@ class Squeeze(Operation):
     def backward(self, node, grad_output):
         parent, = node.parents
 
-        if node.axis is None:
+        if node.metadata["axis"] is None:
             grad = grad_output.reshape(parent.shape)
         else:
-            grad = xp().expand_dims(grad_output, axis=node.axis)
+            grad = xp().expand_dims(grad_output, axis=node.metadata["axis"])
 
         return (grad,)
     
@@ -181,7 +182,7 @@ class Unsqueeze(Operation):
     """Backward rule for unsqueeze."""
 
     def backward(self, node, grad_output):
-        grad = xp().squeeze(grad_output, axis=node.axis)
+        grad = xp().squeeze(grad_output, axis=node.metadata["axis"])
         return (grad,)
     
 class Pow(Operation):
@@ -190,7 +191,7 @@ class Pow(Operation):
 
         parent, = node.parents
 
-        exponent = node.exponent
+        exponent = node.metadata["exponent"]
 
         grad = (
             grad_output
@@ -204,7 +205,7 @@ class Stack(Operation):
 
     def backward(self, node, grad_output):
 
-        axis = node.axis
+        axis = node.metadata["axis"]
 
         gradients = []
 

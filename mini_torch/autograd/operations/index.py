@@ -16,7 +16,7 @@ class Index(Operation):
 
         xp().add.at(
             grad,
-            node.index,
+            node.metadata["index"],
             grad_output,
         )
 

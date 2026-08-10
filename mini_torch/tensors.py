@@ -27,6 +27,7 @@ from mini_torch.autograd.operations import (
     STACK,
     ROTARY_EMBEDDING,
     CAST,
+    CROSS_ENTROPY,
 )
 
 # ==========================================================
@@ -110,6 +111,7 @@ class tensor:
         self.op = op
         self.requires_grad = requires_grad
         self.grad = None
+        self.metadata = {}
 
     # ==========================================================
     # Tensor Properties
@@ -214,9 +216,7 @@ class tensor:
         """
         Attach operation-specific metadata to a tensor.
         """
-
-        for key, value in metadata.items():
-            setattr(out, key, value)
+        out.metadata.update(metadata)
 
         return out
 
@@ -507,8 +507,8 @@ class tensor:
 
         expected_shape = (
             1,
+            self.shape[1],
             1,
-            self.shape[-2],
             self.shape[-1] // 2,
         )
 
@@ -714,3 +714,76 @@ class tensor:
     def item(self):
 
         return to_cpu(self.data).item()
+    #=========================================================
+    #        Fused Operations
+    #=========================================================
+
+    def cross_entropy(self, targets,):
+        """
+        Compute cross entropy loss from logits.
+
+        Parameters
+        ----------
+        targets : Tensor
+            Integer class labels.
+        """
+
+        """
+        Numerically stable Cross Entropy Loss.
+
+        Parameters
+        ----------
+        logits
+            Shape (N, C)
+
+        targets
+            Shape (N,)
+        """
+
+        # ------------------------------------------
+        # Numerical stability
+        # ------------------------------------------
+
+        row_max = xp().max(
+            self.data,
+            axis=-1,
+            keepdims=True,
+        )
+
+        shifted = self.data - row_max
+
+        # ------------------------------------------
+        # log(sum(exp(logits)))
+        # ------------------------------------------
+
+        exp = xp().exp(shifted)
+
+        sum_exp = xp().sum(
+            exp,
+            axis=-1,
+        )
+
+        logsumexp = xp().log(sum_exp) + row_max.squeeze(-1)
+
+        # ------------------------------------------
+        # Gather correct class logits
+        # ------------------------------------------
+
+        batch_size = self.shape[0]
+
+        target_logits = self.data[
+            xp().arange(batch_size),
+            targets.data,
+        ]
+
+        # ------------------------------------------
+        # Cross entropy
+        # ------------------------------------------
+
+        loss = xp().mean(logsumexp - target_logits)
+
+        out = tensor(loss, parents=(self,), op = CROSS_ENTROPY, requires_grad = self.requires_grad)
+
+        out = self._attach_metadata(out, targets=targets.data,)
+
+        return out

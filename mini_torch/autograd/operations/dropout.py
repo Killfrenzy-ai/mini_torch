@@ -10,7 +10,7 @@ class Dropout(Operation):
 
     def backward(self, node, grad_output):
 
-        mask = node.mask
+        mask = node.metadata["mask"]
 
         grad = grad_output * mask
 

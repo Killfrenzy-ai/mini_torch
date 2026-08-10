@@ -1,5 +1,6 @@
 from mini_torch.nn.module import Module
 from mini_torch.backend import xp
+from mini_torch.tensors import tensor
 
 class MSELoss(Module):
     """
@@ -68,21 +69,68 @@ class CrossEntropyLoss(Module):
         super().__init__()
         self.eps = eps
 
-    def forward(self, prediction, target):
+    def forward(self, logits, targets):
+        """
+        Numerically stable Cross Entropy Loss.
 
-        prediction = prediction.clip(
-            self.eps,
-            1.0 - self.eps,
+        Parameters
+        ----------
+        logits
+            Shape (N, C)
+
+        targets
+            Shape (N,)
+        """
+
+        # ------------------------------------------
+        # Numerical stability
+        # ------------------------------------------
+
+        row_max = logits.max(
+            axis=-1,
+            keepdims=True,
         )
 
-        batch_size = prediction.shape[0]
-        rows = xp().arange(batch_size)
+        shifted = logits - row_max
 
-        probabilities = prediction[
-            rows,
-            target,
+        # ------------------------------------------
+        # log(sum(exp(logits)))
+        # ------------------------------------------
+
+        logsumexp = (
+
+            shifted.exp()
+
+            .sum(axis=-1)
+
+            .log()
+
+            +
+
+            row_max.squeeze(-1)
+
+        )
+
+        # ------------------------------------------
+        # Gather correct class logits
+        # ------------------------------------------
+
+        batch_size = logits.shape[0]
+
+        target_logits = logits[
+            range(batch_size),
+            targets,
         ]
 
-        loss = -probabilities.log()
+        # ------------------------------------------
+        # Cross entropy
+        # ------------------------------------------
 
-        return loss.mean()
+        loss = (logsumexp - target_logits).mean()
+
+        out = tensor(loss.data, parents=(logits,), op = CROSS_ENTROPY, requires_grad = logits.requires_grad)
+
+        out.logits = logits
+        out.targets = targets
+
+        return out

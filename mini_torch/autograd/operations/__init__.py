@@ -33,3 +33,5 @@ from .rotary_embedding_operation import RotaryEmbeddingOperation
 DROPOUT = Dropout()
 
 ROTARY_EMBEDDING = RotaryEmbeddingOperation()
+
+from mini_torch.autograd.operations.cross_entropy import CROSS_ENTROPY

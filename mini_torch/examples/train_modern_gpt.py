@@ -26,7 +26,7 @@ NUM_HEADS = 4
 NUM_LAYERS = 4
 FF_HIDDEN_DIM = 384
 
-BATCH_SIZE = 32
+BATCH_SIZE = 48
 VOCAB_SIZE = 4096
 
 LEARNING_RATE = 3e-4
@@ -486,35 +486,11 @@ for epoch in range(EPOCHS):
 
         logits = logits.float()
 
-        probabilities = logits.softmax(
-            axis=-1
-        )
-
-        probabilities = (
-            probabilities.reshape(
-                -1,
-                tokenizer.vocab_size,
-            )
-        )
+        logits = logits.reshape(-1, tokenizer.vocab_size)
 
         targets = y.reshape(-1)
 
-
-        raw_loss = criterion(
-            probabilities,
-            targets,
-        )
-
-
-        # ==================================================
-        # Gradient accumulation
-        # ==================================================
-
-        loss = (
-            raw_loss
-            / ACCUMULATION_STEPS
-        )
-
+        loss = logits.cross_entropy(targets)
 
         # ==================================================
         # Loss scaling
@@ -639,7 +615,7 @@ for epoch in range(EPOCHS):
         # ==================================================
 
         epoch_loss += (
-            raw_loss.item()
+            loss.data.item()
         )
 
         batch_count += 1
@@ -664,7 +640,7 @@ for epoch in range(EPOCHS):
                 f"[{batch_count}/"
                 f"{len(train_loader)}] "
                 f"| Batch Loss: "
-                f"{raw_loss.item():.4f} "
+                f"{loss.data.item():.4f} "
                 f"| Avg Loss: "
                 f"{running_loss:.4f} "
                 f"| Grad Norm: "

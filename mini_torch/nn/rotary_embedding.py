@@ -59,8 +59,8 @@ class RotaryEmbedding(Module):
             frequencies
         ).reshape(
             1,
-            1,
             max_seq_len,
+            1,
             head_dim // 2,
         )
 
@@ -68,14 +68,14 @@ class RotaryEmbedding(Module):
             frequencies
         ).reshape(
             1,
-            1,
             max_seq_len,
+            1,
             head_dim // 2,
         )
 
     def forward(self, x):
 
-        _, _, T, D = x.shape
+        _, T, _, D = x.shape
 
         if D != self.head_dim:
             raise ValueError(
@@ -99,15 +99,15 @@ class RotaryEmbedding(Module):
 
         cos = self.cos[
             :,
-            :,
             :T,
+            :,
             :,
         ]
 
         sin = self.sin[
             :,
-            :,
             :T,
+            :,
             :,
         ]
 

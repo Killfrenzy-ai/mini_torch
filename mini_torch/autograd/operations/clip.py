@@ -8,8 +8,8 @@ class Clip(Operation):
 
         x = node.parents[0].data
 
-        minimum = node.minimum
-        maximum = node.maximum
+        minimum = node.metadata["minimum"]
+        maximum = node.metadata["maximum"]
 
         mask = (
             (x >= minimum)

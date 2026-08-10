@@ -196,7 +196,7 @@ class BPETokenizer:
 
         )
 
-        self.encoder = BPEEncoderV3(
+        self.encoder = BPEEncoder(
 
             self.vocab,
 
